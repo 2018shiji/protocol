@@ -7,6 +7,8 @@ import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Random;
@@ -26,6 +28,10 @@ public class PingApp extends Application {
     public PingApp() {
         Random random = new Random();
         port = (short)(random.nextInt() & 0x0000FFFF);
+        this.echo_times = 3;
+        try {
+            this.destIP = InetAddress.getByName("192.168.50.1").getAddress();
+        } catch (UnknownHostException e){e.printStackTrace();}
     }
 
     public void startPing() {

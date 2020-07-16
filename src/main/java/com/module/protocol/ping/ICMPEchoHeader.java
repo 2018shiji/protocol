@@ -30,13 +30,13 @@ public class ICMPEchoHeader implements IProtocol {
         byte[] buffer = new byte[ICMP_ECHO_HEADER_LENGTH];
         ByteBuffer byteBuffer = ByteBuffer.wrap(buffer);
 
-        short type = ICMP_ECHO_TYPE;
+        byte type = ICMP_ECHO_TYPE;
         if(headerName == "echo_reply")
             type = ICMP_ECHO_REPLY_TYPE;
 
-        byteBuffer.putShort(type);
-        short code = 0;
-        byteBuffer.putShort(code);
+        byteBuffer.put(type);
+        byte code = 0;
+        byteBuffer.put(code);
 
         short checkSum = 0;
         byteBuffer.putShort(checkSum);

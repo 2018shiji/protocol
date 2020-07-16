@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.util.Arrays;
 import java.util.HashMap;
 
@@ -41,8 +42,8 @@ public class ProtocolManager implements PacketReceiver, IMacReceiver {
     private static HashMap<String, byte[]> ipToMacTable;
     private static HashMap<String, byte[]> dataWaitToSend;
 
-
-    public ProtocolManager() {
+    @PostConstruct
+    public void initProtocolManager(){
         ipToMacTable = new HashMap<>();
         dataWaitToSend = new HashMap<>();
         dataLink.registerPacketReceiver(this);
@@ -103,13 +104,12 @@ public class ProtocolManager implements PacketReceiver, IMacReceiver {
         if(info == null)
             return;
 
-        byte protocol = 0;
-        if(info.get("protocol") != null) {
-            protocol = (byte)info.get("protocol");
-            //设置下一层协议的头部
-            packet.header = (byte[])info.get("header");
-            System.out.println("receive packet with protocol: " + protocol);
-        }
+        byte protocol = (byte)info.get("protocol");
+        //设置下一层协议的头部
+        System.out.println("ProtocolManager -> receive packet with protocol: " + info.get("protocol"));
+        System.out.println("source_ip: " + info.get("source_ip") + "\t" + "dest_ip: " + info.get("dest_ip"));
+        System.out.println("header: " + info.get("header"));
+        System.out.println("*************************************************");
 
         switch(protocol) {
             case IPPacket.IPPROTO_ICMP:

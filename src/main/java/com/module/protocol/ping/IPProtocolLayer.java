@@ -1,11 +1,17 @@
 package com.module.protocol.ping;
 
+import com.module.protocol.utils.HexConversion;
+import com.module.protocol.utils.Utility;
 import com.module.protocol.datalink.DataLinkLayer;
 import jpcap.packet.Packet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.Base64;
 import java.util.HashMap;
 
 @Component("ipProtocolLayer")
@@ -24,12 +30,12 @@ public class IPProtocolLayer implements IProtocol {
 
     @Override
     public byte[] createHeader(HashMap<String, Object> headerInfo) {
-        byte version = IP_VERSION;
+        byte version = (byte)(IP_VERSION & 0x0F);
         byte internetHeaderLength = 5;
         if(headerInfo.get("internet_header_length") != null)
             internetHeaderLength = (byte)headerInfo.get("internet_header_length");
 
-        byte[] buffer = new byte[internetHeaderLength];
+        byte[] buffer = new byte[internetHeaderLength * 4];
         ByteBuffer byteBuffer = ByteBuffer.wrap(buffer);
         byteBuffer.put((byte) (internetHeaderLength << 4 | version));
 
@@ -43,17 +49,28 @@ public class IPProtocolLayer implements IProtocol {
         }
         byteBuffer.put((byte)(dscp | ecn << 6));
 
-        if (headerInfo.get("total_length") == null) {
+        if (headerInfo.get("data_length") == null) {
             return null;
         }
 
-        short totalLength = (short)headerInfo.get("total_length");
-        byteBuffer.putShort(totalLength);
-        int identification = 0;
-        if (headerInfo.get("identification") != null) {
-            identification = (int)headerInfo.get("identification");
+        /**总长度等于IP包头+ICMP包头+Option+后续数据长度*/
+
+        int optionLength = 0;
+        byte[] options = null;
+
+        if(headerInfo.get("options") != null){
+            options = (byte[])headerInfo.get("options");
+            optionLength += options.length;
         }
-        byteBuffer.putInt(identification);
+        short totalLength = (short) ((int)headerInfo.get("data_length") + optionLength + internetHeaderLength*4);
+        byteBuffer.order(ByteOrder.BIG_ENDIAN);
+        byteBuffer.putShort(totalLength);
+
+        short identification = 0;
+        if (headerInfo.get("identification") != null) {
+            identification = (short)headerInfo.get("identification");
+        }
+        byteBuffer.putShort(identification);
 
         short flagAndOffset = 0;
         if (headerInfo.get("flag") != null) {
@@ -64,41 +81,44 @@ public class IPProtocolLayer implements IProtocol {
         }
         byteBuffer.putShort(flagAndOffset);
 
-        short timeToLive = 64;
+        byte timeToLive = 64;
         if (headerInfo.get("time_to_live") != null) {
-            timeToLive = (short)headerInfo.get("time_to_live");
+            timeToLive = (byte)headerInfo.get("time_to_live");
         }
-        byteBuffer.putShort(timeToLive);
+        byteBuffer.put(timeToLive);
 
-        short protocol = 0;
+        byte protocol = 0;
         if (headerInfo.get("protocol") == null) {
             return null;
         }
-        protocol = (short)headerInfo.get("protocol");
-        byteBuffer.putShort(protocol);
+        protocol = (byte)headerInfo.get("protocol");
+        byteBuffer.put(protocol);
 
         short checkSum = 0;
+        byteBuffer.order(ByteOrder.BIG_ENDIAN);
         byteBuffer.putShort(checkSum);
 
-        int srcIP = 0;
-        if (headerInfo.get("source_ip") == null) {
-            return null;
-        }
-        srcIP = (int)headerInfo.get("source_ip");
-        byteBuffer.putInt(srcIP);
+        byte[] sourceIPBytes = null;
+        try {
+            sourceIPBytes = InetAddress.getByName("192.168.50.74").getAddress();
+        } catch (UnknownHostException e){e.printStackTrace();}
+        ByteBuffer sourceIP = ByteBuffer.wrap(sourceIPBytes);
+        byteBuffer.order(ByteOrder.BIG_ENDIAN);
+        byteBuffer.putInt(sourceIP.getInt());
 
         int destIP = 0;
         if (headerInfo.get("destination_ip") == null) {
             return null;
         }
+        byteBuffer.order(ByteOrder.BIG_ENDIAN);
         byteBuffer.putInt(destIP);
 
         if (headerInfo.get("options") != null) {
-            byte[] options = (byte[]) headerInfo.get("options");
             byteBuffer.put(options);
         }
 
-        checkSum = 0;
+        checkSum = (short) Utility.checksum(byteBuffer.array(), byteBuffer.array().length);
+        byteBuffer.order(ByteOrder.BIG_ENDIAN);
         byteBuffer.putShort(CHECKSUM_OFFSET, checkSum);
 
         return byteBuffer.array();
@@ -121,13 +141,14 @@ public class IPProtocolLayer implements IProtocol {
         byte[] src_ip = new byte[4];
         buffer.position(SOURCE_IP_OFFSET);
         buffer.get(src_ip, 0, 4);
-        headerInfo.put("source_ip", src_ip);
+
+        headerInfo.put("source_ip", HexConversion.bytes2Ipv4(src_ip));
 
         //获取接收者IP
         byte[] dest_ip = new byte[4];
         buffer.position(DEST_IP_OFFSET);
         buffer.get(dest_ip, 0, 4);
-        headerInfo.put("dest_ip", dest_ip);
+        headerInfo.put("dest_ip", HexConversion.bytes2Ipv4(dest_ip));
 
         //确保接收者是我们自己
         byte[] ip = dataLink.deviceIPAddress();
@@ -160,7 +181,6 @@ public class IPProtocolLayer implements IProtocol {
 
         return headerInfo;
     }
-
 
 
 }

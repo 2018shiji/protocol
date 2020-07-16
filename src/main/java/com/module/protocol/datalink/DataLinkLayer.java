@@ -19,8 +19,6 @@ import java.net.UnknownHostException;
  */
 @Component
 public class DataLinkLayer extends PacketProvider implements PacketReceiver, IMacReceiver {
-    @Autowired
-    private ARPProtocolLayer arpLayer;
     private NetworkInterface device;
     private Inet4Address ipAddress;
     private byte[] macAddress;
@@ -41,7 +39,6 @@ public class DataLinkLayer extends PacketProvider implements PacketReceiver, IMa
 
         sender = captor.getJpcapSenderInstance();
 
-        testARPProtocol();
     }
 
     public byte[] deviceIPAddress() {
@@ -82,12 +79,14 @@ public class DataLinkLayer extends PacketProvider implements PacketReceiver, IMa
     public void receiveMacAddress(byte[] ip, byte[] mac) {
         System.out.println("receive arp reply msg with sender ip:");
         for(byte b : ip){
-            System.out.println(Integer.toUnsignedString(b & 0xff) + ".");
+            System.out.print(Integer.toUnsignedString(b & 0xff) + ".");
         }
+        System.out.println();
         System.out.println("with sender mac: ");
         for(byte b : mac){
-            System.out.println(Integer.toHexString(b & 0xff) + ":");
+            System.out.print(Integer.toHexString(b & 0xff) + ":");
         }
+        System.out.println();
     }
 
     @Override
@@ -97,6 +96,7 @@ public class DataLinkLayer extends PacketProvider implements PacketReceiver, IMa
 
     private Inet4Address getDeviceIpAddress() {
         for(NetworkInterfaceAddress temp : device.addresses){
+            System.out.println(temp.address.getHostName());
             //网卡网址符合ipv4规范才是可用网卡
             if(!(temp.address instanceof Inet4Address))
                 continue;
@@ -113,14 +113,4 @@ public class DataLinkLayer extends PacketProvider implements PacketReceiver, IMa
         }
     }
 
-    private void testARPProtocol() {
-        registerPacketReceiver(arpLayer);
-
-        try {
-            byte[] ip = InetAddress.getByName("192.168.2.1").getAddress();
-            arpLayer.getMacByIP(ip, this);
-        } catch(UnknownHostException e) {
-            e.printStackTrace();
-        }
-    }
 }
