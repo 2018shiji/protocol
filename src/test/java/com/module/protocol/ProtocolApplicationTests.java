@@ -6,7 +6,6 @@ import com.module.protocol.datalink.DataLinkLayer;
 import jpcap.JpcapCaptor;
 import jpcap.NetworkInterface;
 import jpcap.NetworkInterfaceAddress;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -18,7 +17,6 @@ import java.net.UnknownHostException;
 @SpringBootTest
 class ProtocolApplicationTests {
 
-
     @Autowired
     PingApp pingApp;
     @Autowired
@@ -27,7 +25,6 @@ class ProtocolApplicationTests {
     ARPProtocolLayer arpLayer;
 
     JpcapCaptor jpcapCaptor;
-
 
     void beforeAllTest() {
         NetworkInterface[] devices = JpcapCaptor.getDeviceList();
