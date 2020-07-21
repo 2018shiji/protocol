@@ -28,6 +28,7 @@ import java.util.HashMap;
 public class ProtocolManager implements PacketReceiver {
     private long sendTime;
 
+
     private static HashMap<String, byte[]> ipToMacTable;
     private static HashMap<String, byte[]> dataWaitToSend;
     private static byte[] broadcast=new byte[]{(byte)255,(byte)255,(byte)255,(byte)255,(byte)255,(byte)255};
