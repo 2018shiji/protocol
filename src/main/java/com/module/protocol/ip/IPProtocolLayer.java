@@ -1,5 +1,6 @@
-package com.module.protocol.ping;
+package com.module.protocol.ip;
 
+import com.module.protocol.IProtocol;
 import com.module.protocol.utils.HexConversion;
 import com.module.protocol.utils.Utility;
 import com.module.protocol.datalink.DataLinkLayer;
@@ -11,7 +12,6 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.Base64;
 import java.util.HashMap;
 
 @Component("ipProtocolLayer")
@@ -25,9 +25,6 @@ public class IPProtocolLayer implements IProtocol {
     private static int SOURCE_IP_OFFSET = 12 + ETHERNET_FRAME_HEADER_LENGTH;
     private static int DEST_IP_OFFSET = 16 + ETHERNET_FRAME_HEADER_LENGTH;
 
-    @Autowired
-    private DataLinkLayer dataLink;
-
     @Override
     public byte[] createHeader(HashMap<String, Object> headerInfo) {
         byte version = (byte)(IP_VERSION & 0x0F);
@@ -37,7 +34,8 @@ public class IPProtocolLayer implements IProtocol {
 
         byte[] buffer = new byte[internetHeaderLength * 4];
         ByteBuffer byteBuffer = ByteBuffer.wrap(buffer);
-        byteBuffer.put((byte) (internetHeaderLength << 4 | version));
+        byteBuffer.put((byte) (version << 4 | internetHeaderLength));
+        byte b = byteBuffer.get(0);
 
         byte dscp = 0;
         if (headerInfo.get("dscp") != null) {
@@ -47,7 +45,7 @@ public class IPProtocolLayer implements IProtocol {
         if (headerInfo.get("ecn") != null) {
             ecn = (byte)headerInfo.get("ecn");
         }
-        byteBuffer.put((byte)(dscp | ecn << 6));
+        byteBuffer.put((byte)(dscp << 2 | ecn));
 
         if (headerInfo.get("data_length") == null) {
             return null;
@@ -70,15 +68,17 @@ public class IPProtocolLayer implements IProtocol {
         if (headerInfo.get("identification") != null) {
             identification = (short)headerInfo.get("identification");
         }
+        byteBuffer.order(ByteOrder.BIG_ENDIAN);
         byteBuffer.putShort(identification);
 
         short flagAndOffset = 0;
         if (headerInfo.get("flag") != null) {
-            flagAndOffset = (short)headerInfo.get("flag");
+            flagAndOffset = (short)(((short)headerInfo.get("flag"))<<13);
         }
         if (headerInfo.get("fragment_offset") != null) {
-            flagAndOffset |= ((short)headerInfo.get("fragment_offset")) << 3;
+            flagAndOffset |= ((short)headerInfo.get("fragment_offset"));
         }
+        byteBuffer.order(ByteOrder.BIG_ENDIAN);
         byteBuffer.putShort(flagAndOffset);
 
         byte timeToLive = 64;
@@ -98,19 +98,20 @@ public class IPProtocolLayer implements IProtocol {
         byteBuffer.order(ByteOrder.BIG_ENDIAN);
         byteBuffer.putShort(checkSum);
 
-        byte[] sourceIPBytes = null;
-        try {
-            sourceIPBytes = InetAddress.getByName("192.168.50.74").getAddress();
-        } catch (UnknownHostException e){e.printStackTrace();}
+        byte[] sourceIPBytes = DataLinkLayer.getInstance().deviceIPAddress();
         ByteBuffer sourceIP = ByteBuffer.wrap(sourceIPBytes);
+        int srcIP = sourceIP.getInt();
+        System.out.println("*********srcIP" + srcIP);
         byteBuffer.order(ByteOrder.BIG_ENDIAN);
-        byteBuffer.putInt(sourceIP.getInt());
+        byteBuffer.putInt(srcIP);
 
         int destIP = 0;
         if (headerInfo.get("destination_ip") == null) {
             return null;
         }
         byteBuffer.order(ByteOrder.BIG_ENDIAN);
+        destIP = (int)headerInfo.get("destination_ip");
+        System.out.println("*********destIP" + destIP);
         byteBuffer.putInt(destIP);
 
         if (headerInfo.get("options") != null) {
@@ -151,7 +152,7 @@ public class IPProtocolLayer implements IProtocol {
         headerInfo.put("dest_ip", HexConversion.bytes2Ipv4(dest_ip));
 
         //确保接收者是我们自己
-        byte[] ip = dataLink.deviceIPAddress();
+        byte[] ip = DataLinkLayer.getInstance().deviceIPAddress();
         for(int i = 0; i < ip.length; i++){
             if(ip[i] != dest_ip[i])
                 return null;

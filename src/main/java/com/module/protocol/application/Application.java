@@ -1,6 +1,6 @@
 package com.module.protocol.application;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import com.module.protocol.IApplication;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -8,13 +8,11 @@ import java.util.HashMap;
 @Component
 public class Application implements IApplication {
 
-    @Autowired
-    private ApplicationManager manager;
     protected int port = 0;
     private boolean closed = false;
 
     public Application(){
-        manager.addApplication(this);
+        ApplicationManager.getInstance().addApplication(this);
     }
 
     @Override

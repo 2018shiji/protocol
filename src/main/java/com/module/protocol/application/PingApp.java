@@ -1,8 +1,8 @@
 package com.module.protocol.application;
 
 import com.module.protocol.icmp.ICMPProtocolLayer;
-import com.module.protocol.ping.IProtocol;
-import com.module.protocol.ping.ProtocolManager;
+import com.module.protocol.IProtocol;
+import com.module.protocol.ProtocolManager;
 import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -16,7 +16,7 @@ import java.util.Random;
 @Component
 public class PingApp extends Application {
     @Setter
-    private int echo_times = 0;//连续发送多少次数据包
+    private int echo_times = 10;//连续发送多少次数据包
     @Setter
     private byte[] destIP = null;//ping的对象
     private short identifier = 0;//进程号
@@ -26,17 +26,19 @@ public class PingApp extends Application {
     private ProtocolManager manager;
 
     public PingApp() {
-        Random random = new Random();
-        port = (short)(random.nextInt() & 0x0000FFFF);
-        this.echo_times = 3;
+        Random rand = new Random();
+        identifier = (short) (50 & 0x0000FFFF);
+        port = identifier;
         try {
-            this.destIP = InetAddress.getByName("192.168.50.1").getAddress();
+            this.destIP = InetAddress.getByName("192.168.43.154").getAddress();
         } catch (UnknownHostException e){e.printStackTrace();}
+
     }
 
     public void startPing() {
         for(int i = 0; i < echo_times; i++){
             try{
+                Thread.sleep(200);
                 byte[] packet = createPackage();
                 manager.sendData(packet, destIP);
             } catch (Exception e) {
@@ -51,9 +53,19 @@ public class PingApp extends Application {
             throw new Exception("ICMP Header create fail");
         }
         byte[] ipHeader =createIP4Header(icmpEchoHeader.length);
+        for(int i = 0; i < ipHeader.length; i++) {
+            System.out.print(Integer.toHexString(ipHeader[i] & 0xFF) + "\t");
+        }
+        System.out.println();
+        for(int i = 0; i < icmpEchoHeader.length; i++) {
+            System.out.print(Integer.toHexString(icmpEchoHeader[i] & 0xFF) + "\t");
+        }
+        System.out.println();
+        System.out.println("PingApp:" + ipHeader.length);
+        System.out.println("******" + icmpEchoHeader.length);
 
         //分别构建ip包头和icmp echo包头后，将两个包头结合在一起
-        byte[] packet = new byte[icmpEchoHeader.length + ipHeader.length];
+        byte[] packet = new byte[ipHeader.length + icmpEchoHeader.length];
         ByteBuffer packetBuffer = ByteBuffer.wrap(packet);
         packetBuffer.put(ipHeader);
         packetBuffer.put(icmpEchoHeader);
@@ -72,7 +84,7 @@ public class PingApp extends Application {
         headerInfo.put("sequence_number", sequence);
         sequence++;
         //附带当前时间
-        long time = System.currentTimeMillis();
+        long time = 0;
         ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
         buffer.putLong(time);
         byte[] timeBuffer = buffer.array();
@@ -110,7 +122,7 @@ public class PingApp extends Application {
         byte[] time_buf = (byte[])data.get("data");
         ByteBuffer buf = ByteBuffer.wrap(time_buf);
         long send_time = buf.getLong();
-        System.out.println("receive reply for ping request " + sequence + "for  " + (time - send_time) / 1000 + "secs");
+        System.out.println("￥￥￥￥￥￥￥￥￥ receive reply for ping request " + sequence);
     }
 
 }

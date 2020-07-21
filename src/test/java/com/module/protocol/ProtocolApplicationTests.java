@@ -17,12 +17,8 @@ import java.net.UnknownHostException;
 @SpringBootTest
 class ProtocolApplicationTests {
 
-    @Autowired
-    PingApp pingApp;
-    @Autowired
-    DataLinkLayer linkLayer;
-    @Autowired
-    ARPProtocolLayer arpLayer;
+    @Autowired PingApp pingApp;
+    @Autowired ARPProtocolLayer arpLayer;
 
     JpcapCaptor jpcapCaptor;
 
@@ -33,35 +29,25 @@ class ProtocolApplicationTests {
         for(int i = 0; i < devices.length; i++){
             for(NetworkInterfaceAddress temp : devices[i].addresses){
                 System.out.println(temp.address.getHostAddress());
-                if("192.168.50.74".equals(temp.address.getHostAddress())){
+                if("192.168.43.110".equals(temp.address.getHostAddress())){
                     device = devices[i];
                     System.out.println("---------------find-------------");
                     break;
                 }
             }
         }
+        DataLinkLayer.getInstance().initWithOpenDevice(device);
         try {
             jpcapCaptor = JpcapCaptor.openDevice(device, 2000, true, 20);
         }catch(IOException e){e.printStackTrace();}
-        linkLayer.initWithOpenDevice(device);
-    }
-
-    @Test
-    void testArp(){
-        beforeAllTest();
-        linkLayer.registerPacketReceiver(arpLayer);
-        try {
-            byte[] ip = InetAddress.getByName("192.168.50.1").getAddress();
-            arpLayer.getMacByIP(ip, linkLayer);
-        } catch(UnknownHostException e) { e.printStackTrace(); }
-        jpcapCaptor.loopPacket(-1, linkLayer);
     }
 
     @Test
     void testPing() {
         beforeAllTest();
         pingApp.startPing();
-        jpcapCaptor.loopPacket(-1, linkLayer);
+        jpcapCaptor.loopPacket(-1, DataLinkLayer.getInstance());
     }
+
 
 }

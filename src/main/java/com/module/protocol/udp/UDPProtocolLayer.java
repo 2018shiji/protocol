@@ -1,6 +1,6 @@
 package com.module.protocol.udp;
 
-import com.module.protocol.ping.IProtocol;
+import com.module.protocol.IProtocol;
 import jpcap.packet.Packet;
 import org.springframework.stereotype.Component;
 

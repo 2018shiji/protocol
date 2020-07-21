@@ -1,4 +1,4 @@
-package com.module.protocol.ping;
+package com.module.protocol;
 
 import jpcap.packet.Packet;
 import org.springframework.stereotype.Component;

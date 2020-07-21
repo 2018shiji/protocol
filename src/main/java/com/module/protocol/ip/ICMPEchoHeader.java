@@ -1,9 +1,12 @@
-package com.module.protocol.ping;
+package com.module.protocol.ip;
 
+import com.module.protocol.IProtocol;
+import com.module.protocol.utils.Utility;
 import jpcap.packet.Packet;
 import org.springframework.stereotype.Component;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.Random;
 
@@ -27,7 +30,14 @@ public class ICMPEchoHeader implements IProtocol {
         if(headerName != "echo" && headerName != "echo_reply")
             return null;
 
-        byte[] buffer = new byte[ICMP_ECHO_HEADER_LENGTH];
+        int bufferLen = ICMP_ECHO_HEADER_LENGTH;
+        int dataLen = ((byte[])headerInfo.get("data")).length;
+
+        if(headerInfo.get("data") != null){
+            bufferLen += ((byte[])headerInfo.get("data")).length;
+        }
+
+        byte[] buffer = new byte[bufferLen];
         ByteBuffer byteBuffer = ByteBuffer.wrap(buffer);
 
         byte type = ICMP_ECHO_TYPE;
@@ -39,27 +49,38 @@ public class ICMPEchoHeader implements IProtocol {
         byteBuffer.put(code);
 
         short checkSum = 0;
+        byteBuffer.order(ByteOrder.BIG_ENDIAN);
         byteBuffer.putShort(checkSum);
 
         short identifier = 0;
         if(headerInfo.get("identifier") == null) {
-            Random random = new Random();
-            identifier = (short)random.nextInt();
+//            Random random = new Random();
+//            identifier = (short)random.nextInt();
+            identifier = 50;
             headerInfo.put("identifier", identifier);
         }
         identifier = (short)headerInfo.get("identifier");
+        byteBuffer.order(ByteOrder.BIG_ENDIAN);
         byteBuffer.putShort(identifier);
 
         short sequenceNumber = 0;
         if (headerInfo.get("sequence_number") != null) {
             sequenceNumber = (short) headerInfo.get("sequence_number");
-            sequenceNumber += 1;
+//            sequenceNumber += 1;
         }
         headerInfo.put("sequence_number", sequenceNumber);
+        byteBuffer.order(ByteOrder.BIG_ENDIAN);
         byteBuffer.putShort(sequenceNumber);
 
-        checkSum = 0;
-        byteBuffer.putShort(4, checkSum);
+        if (headerInfo.get("data") != null) {
+            byte[] data = (byte[])headerInfo.get("data");
+
+            byteBuffer.put(data, 0, data.length);
+        }
+
+        checkSum = (short) Utility.checksum(byteBuffer.array(), byteBuffer.array().length);
+        byteBuffer.order(ByteOrder.BIG_ENDIAN);
+        byteBuffer.putShort(2, checkSum);
 
         return byteBuffer.array();
     }

@@ -1,4 +1,4 @@
-package com.module.protocol.application;
+package com.module.protocol;
 
 import org.springframework.stereotype.Component;
 

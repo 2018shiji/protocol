@@ -1,28 +1,35 @@
 package com.module.protocol.datalink;
 
-import com.module.protocol.arp.ARPProtocolLayer;
-import com.module.protocol.utils.IMacReceiver;
-import com.module.protocol.utils.PacketProvider;
 import jpcap.*;
 import jpcap.packet.EthernetPacket;
 import jpcap.packet.Packet;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.net.Inet4Address;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 
 /**
  * 数据链路层
  */
-@Component
-public class DataLinkLayer extends PacketProvider implements PacketReceiver, IMacReceiver {
+public class DataLinkLayer extends PacketProvider implements PacketReceiver {
+    private static DataLinkLayer instance;
     private NetworkInterface device;
     private Inet4Address ipAddress;
     private byte[] macAddress;
     JpcapSender sender;
+
+    private DataLinkLayer(){}
+
+    public static DataLinkLayer getInstance(){
+        if(instance == null){
+            synchronized (DataLinkLayer.class){
+                if(instance == null){
+                    instance = new DataLinkLayer();
+                }
+            }
+        }
+        return instance;
+    }
 
     public void initWithOpenDevice(NetworkInterface device){
         this.device = device;
@@ -67,7 +74,7 @@ public class DataLinkLayer extends PacketProvider implements PacketReceiver, IMa
          * 12-13字节：数据包发送类型，0x0806表示ARP包，0x0800表示ip包，
          */
         EthernetPacket ether = new EthernetPacket();
-        ether.frametype = EthernetPacket.ETHERTYPE_ARP;
+        ether.frametype = frameType;
         ether.src_mac = this.device.mac_address;
         ether.dst_mac = dstMacAddress;
         packet.datalink = ether;
@@ -75,19 +82,6 @@ public class DataLinkLayer extends PacketProvider implements PacketReceiver, IMa
         sender.sendPacket(packet);
     }
 
-    @Override
-    public void receiveMacAddress(byte[] ip, byte[] mac) {
-        System.out.println("receive arp reply msg with sender ip:");
-        for(byte b : ip){
-            System.out.print(Integer.toUnsignedString(b & 0xff) + ".");
-        }
-        System.out.println();
-        System.out.println("with sender mac: ");
-        for(byte b : mac){
-            System.out.print(Integer.toHexString(b & 0xff) + ":");
-        }
-        System.out.println();
-    }
 
     @Override
     public void receivePacket(Packet packet) {
