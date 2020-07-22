@@ -35,7 +35,7 @@ public class IPProtocolLayer implements IProtocol {
         byte[] buffer = new byte[internetHeaderLength * 4];
         ByteBuffer byteBuffer = ByteBuffer.wrap(buffer);
         byteBuffer.put((byte) (version << 4 | internetHeaderLength));
-        byte b = byteBuffer.get(0);
+//        byte b = byteBuffer.get(0);
 
         byte dscp = 0;
         if (headerInfo.get("dscp") != null) {
@@ -101,7 +101,7 @@ public class IPProtocolLayer implements IProtocol {
         byte[] sourceIPBytes = DataLinkLayer.getInstance().deviceIPAddress();
         ByteBuffer sourceIP = ByteBuffer.wrap(sourceIPBytes);
         int srcIP = sourceIP.getInt();
-        System.out.println("*********srcIP" + srcIP);
+        System.out.println("IPProtocolLayer*********srcIP" + srcIP);
         byteBuffer.order(ByteOrder.BIG_ENDIAN);
         byteBuffer.putInt(srcIP);
 
@@ -111,7 +111,7 @@ public class IPProtocolLayer implements IProtocol {
         }
         byteBuffer.order(ByteOrder.BIG_ENDIAN);
         destIP = (int)headerInfo.get("destination_ip");
-        System.out.println("*********destIP" + destIP);
+        System.out.println("IPProtocolLayer*********destIP" + destIP);
         byteBuffer.putInt(destIP);
 
         if (headerInfo.get("options") != null) {

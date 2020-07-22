@@ -16,7 +16,7 @@ import java.util.Random;
 @Component
 public class PingApp extends Application {
     @Setter
-    private int echo_times = 10;//连续发送多少次数据包
+    private int echo_times = 1;//连续发送多少次数据包
     @Setter
     private byte[] destIP = null;//ping的对象
     private short identifier = 0;//进程号
@@ -30,7 +30,7 @@ public class PingApp extends Application {
         identifier = (short) (50 & 0x0000FFFF);
         port = identifier;
         try {
-            this.destIP = InetAddress.getByName("192.168.43.154").getAddress();
+            this.destIP = InetAddress.getByName("192.168.50.1").getAddress();
         } catch (UnknownHostException e){e.printStackTrace();}
 
     }
@@ -38,7 +38,6 @@ public class PingApp extends Application {
     public void startPing() {
         for(int i = 0; i < echo_times; i++){
             try{
-                Thread.sleep(200);
                 byte[] packet = createPackage();
                 manager.sendData(packet, destIP);
             } catch (Exception e) {
@@ -61,8 +60,8 @@ public class PingApp extends Application {
             System.out.print(Integer.toHexString(icmpEchoHeader[i] & 0xFF) + "\t");
         }
         System.out.println();
-        System.out.println("PingApp:" + ipHeader.length);
-        System.out.println("******" + icmpEchoHeader.length);
+        System.out.println("PingApp: ipHeader length " + ipHeader.length + "****** icmpHeader length" + icmpEchoHeader.length);
+
 
         //分别构建ip包头和icmp echo包头后，将两个包头结合在一起
         byte[] packet = new byte[ipHeader.length + icmpEchoHeader.length];
@@ -75,8 +74,7 @@ public class PingApp extends Application {
 
     private byte[] createICMPEchoHeader() {
         IProtocol icmp = manager.getProtocol("icmp");
-        if(icmp == null)
-            return null;
+
         //构造icmp echo包头
         HashMap<String, Object> headerInfo = new HashMap<>();
         headerInfo.put("header", "echo");
@@ -101,9 +99,12 @@ public class PingApp extends Application {
         //创建IP包头默认情况下只需要发送数据长度，下层协议号，接收方IP地址
         HashMap<String, Object> headerInfo = new HashMap<>();
         headerInfo.put("data_length", dataLength);
-
-        ByteBuffer destIP = ByteBuffer.wrap(this.destIP);
-        headerInfo.put("destination_ip", destIP.getInt());
+        try {
+            ByteBuffer destIP = ByteBuffer.wrap(InetAddress.getByName("185.53.178.50").getAddress());
+            headerInfo.put("destination_ip", destIP.getInt());
+        }catch (UnknownHostException e){
+            e.printStackTrace();
+        }
 
         byte protocol = ICMPProtocolLayer.PROTOCOL_ICMP;
         headerInfo.put("protocol", protocol);

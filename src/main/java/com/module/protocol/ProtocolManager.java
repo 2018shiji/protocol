@@ -7,6 +7,7 @@ import com.module.protocol.datalink.DataLinkLayer;
 import com.module.protocol.icmp.ICMPProtocolLayer;
 import com.module.protocol.ip.IPProtocolLayer;
 import com.module.protocol.datalink.IMacReceiver;
+import com.module.protocol.udp.UDPProtocolLayer;
 import com.module.protocol.utils.HexConversion;
 import jpcap.PacketReceiver;
 import jpcap.packet.EthernetPacket;
@@ -20,6 +21,7 @@ import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * https://blog.csdn.net/tyler_download/article/details/86638606
@@ -28,15 +30,16 @@ import java.util.HashMap;
 public class ProtocolManager implements PacketReceiver {
     private long sendTime;
 
-
     private static HashMap<String, byte[]> ipToMacTable;
     private static HashMap<String, byte[]> dataWaitToSend;
+    private static ArrayList<Application> icmpPacketReceivers;
     private static byte[] broadcast=new byte[]{(byte)255,(byte)255,(byte)255,(byte)255,(byte)255,(byte)255};
 
     @PostConstruct
     public void initProtocolManager(){
         ipToMacTable = new HashMap<>();
         dataWaitToSend = new HashMap<>();
+        icmpPacketReceivers = new ArrayList<>();
         DataLinkLayer.getInstance().registerPacketReceiver(this);
     }
 
@@ -46,8 +49,16 @@ public class ProtocolManager implements PacketReceiver {
                 return new ICMPProtocolLayer();
             case "ip":
                 return new IPProtocolLayer();
+            case "udp":
+                return new UDPProtocolLayer();
         }
         return null;
+    }
+
+    public void registerForReceiverICMP(Application receiver){
+        if(!icmpPacketReceivers.contains(receiver)){
+            icmpPacketReceivers.add(receiver);
+        }
     }
 
     public void sendData(byte[] data, byte[] ip) throws Exception {
@@ -63,7 +74,6 @@ public class ProtocolManager implements PacketReceiver {
                 headerInfo.put("sender_ip", ip);
                 ARPProtocolLayer arpLayer = new ARPProtocolLayer();
                 byte[] arpRequest = arpLayer.createHeader(headerInfo);
-                if (arpRequest == null) throw new Exception("get mac address fail");
                 DataLinkLayer.getInstance().sendData(arpRequest, broadcast, EthernetPacket.ETHERTYPE_ARP);
             }
             ipToMacTable.put(Arrays.toString(ip), null);
@@ -73,7 +83,7 @@ public class ProtocolManager implements PacketReceiver {
             //如果mac地址已经存在则直接发送数据
             System.out.println("ProtocolManager: send ping request by mac");
             sendTime = System.currentTimeMillis();
-            DataLinkLayer.getInstance().sendData(data, mac, IPPacket.IPPROTO_IP);
+            DataLinkLayer.getInstance().sendData(data, mac, EthernetPacket.ETHERTYPE_IP);
         }
     }
 
@@ -123,7 +133,7 @@ public class ProtocolManager implements PacketReceiver {
         }
 
         if(IPPacket.IPPROTO_ICMP == protocol) {
-            System.out.println("------------after execute------------" + (System.currentTimeMillis()-sendTime) + "ms");
+            System.out.println("------------after execute------------");
             System.out.println("ProtocolManager -> receive packet with protocol: " + info.get("protocol"));
             System.out.println("source_ip: " + info.get("source_ip") + "\t" + "dest_ip: " + info.get("dest_ip"));
             for(int i = 0; i < ((byte[])info.get("header")).length; i++){
@@ -138,7 +148,7 @@ public class ProtocolManager implements PacketReceiver {
 
         switch(protocol) {
             case IPPacket.IPPROTO_ICMP:
-                handleICMPPacket(packet);
+                handleICMPPacket(packet, info);
                 break;
             default:
                 return;
@@ -146,18 +156,36 @@ public class ProtocolManager implements PacketReceiver {
 
     }
 
-    private void handleICMPPacket(Packet packet) {
+    private void handleICMPPacket(Packet packet, HashMap<String, Object> infoFromUpLayer) {
         ICMPProtocolLayer icmpLayer = new ICMPProtocolLayer();
         HashMap<String, Object> headerInfo = icmpLayer.handlePacket(packet);
-        short identifier = (short)headerInfo.get("identifier");
-        IApplication app = ApplicationManager.getInstance().getApplicationByPort(identifier);
-        if(app != null && app.isClosed() != true)
-            app.handleData(headerInfo);
+
+        if(headerInfo == null)
+            System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+
+        for(Map.Entry entry : infoFromUpLayer.entrySet()){
+            headerInfo.put((String)entry.getKey(), entry.getValue());
+        }
+
+        //把收到的icmp数据包发送给所有等待对象
+        //trace app注册接收方式
+        for(int i = 0; i < icmpPacketReceivers.size(); i++){
+            Application receiver = icmpPacketReceivers.get(i);
+            receiver.handleData(headerInfo);
+        }
+
+        //todo ping app 与 trace app目前使用两种方式进行注册，暂时二者选择其一，后续得整合到一起
+        //ping app注册接收方式
+//        short identifier = (short)headerInfo.get("identifier");
+//        IApplication app = ApplicationManager.getInstance().getApplicationByPort(identifier);
+//        if(app != null && app.isClosed() != true)
+//            app.handleData(headerInfo);
 
     }
 
     private void sendWaitingData(byte[] destIP) {
         byte[] data = dataWaitToSend.get(Arrays.toString(destIP));
+        System.out.println(HexConversion.bytes2Ipv4(data));
         byte[] mac = ipToMacTable.get(Arrays.toString(destIP));
         if(data != null && mac != null) {
             System.out.println("ProtocolManager: send message to ip: " + HexConversion.bytes2Ipv4(destIP));

@@ -1,4 +1,4 @@
-package com.module.protocol.ip;
+package com.module.protocol.icmp;
 
 import com.module.protocol.IProtocol;
 import com.module.protocol.utils.Utility;

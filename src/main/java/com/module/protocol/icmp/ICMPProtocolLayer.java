@@ -1,15 +1,10 @@
 package com.module.protocol.icmp;
 
-import com.module.protocol.ip.ICMPEchoHeader;
 import com.module.protocol.IProtocol;
-import jpcap.PacketReceiver;
-import jpcap.packet.EthernetPacket;
 import jpcap.packet.Packet;
 import org.springframework.stereotype.Component;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -26,6 +21,7 @@ public class ICMPProtocolLayer implements IProtocol {
     public ICMPProtocolLayer() {
         //增加icmp echo 协议包头创建对象
         protocol_header_list.add(new ICMPEchoHeader());
+        protocol_header_list.add(new ICMPTimeExceededHeader());
     }
 
 

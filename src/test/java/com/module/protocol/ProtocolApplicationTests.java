@@ -1,6 +1,7 @@
 package com.module.protocol;
 
 import com.module.protocol.application.PingApp;
+import com.module.protocol.application.TraceRouteApp;
 import com.module.protocol.arp.ARPProtocolLayer;
 import com.module.protocol.datalink.DataLinkLayer;
 import jpcap.JpcapCaptor;
@@ -19,6 +20,7 @@ class ProtocolApplicationTests {
 
     @Autowired PingApp pingApp;
     @Autowired ARPProtocolLayer arpLayer;
+    @Autowired TraceRouteApp traceRouteApp;
 
     JpcapCaptor jpcapCaptor;
 
@@ -29,7 +31,7 @@ class ProtocolApplicationTests {
         for(int i = 0; i < devices.length; i++){
             for(NetworkInterfaceAddress temp : devices[i].addresses){
                 System.out.println(temp.address.getHostAddress());
-                if("192.168.43.110".equals(temp.address.getHostAddress())){
+                if("192.168.50.74".equals(temp.address.getHostAddress())){
                     device = devices[i];
                     System.out.println("---------------find-------------");
                     break;
@@ -46,6 +48,13 @@ class ProtocolApplicationTests {
     void testPing() {
         beforeAllTest();
         pingApp.startPing();
+        jpcapCaptor.loopPacket(-1, DataLinkLayer.getInstance());
+    }
+
+    @Test
+    void testTraceRoute(){
+        beforeAllTest();
+        traceRouteApp.startTraceRoute();
         jpcapCaptor.loopPacket(-1, DataLinkLayer.getInstance());
     }
 
