@@ -42,8 +42,9 @@ public class UDPProtocolLayer implements IProtocol {
         byteBuffer.order(ByteOrder.BIG_ENDIAN);
         byteBuffer.putShort(total_length);
 
-        //UDP包头的checksum可以直接设置成0xFFFF
-        char checksum = 65535;
+        //UDP包头的checksum可以直接设置成0xFFFF, DHCP情况下需设置为0
+        char checksum = 0;
+//        char checksum = 65535;
         byteBuffer.putChar(checksum);
 
         if(data != null) byteBuffer.put(data);

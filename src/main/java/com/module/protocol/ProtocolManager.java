@@ -1,20 +1,16 @@
 package com.module.protocol;
 
 import com.module.protocol.application.Application;
-import com.module.protocol.application.ApplicationManager;
 import com.module.protocol.arp.ARPProtocolLayer;
 import com.module.protocol.datalink.DataLinkLayer;
 import com.module.protocol.icmp.ICMPProtocolLayer;
 import com.module.protocol.ip.IPProtocolLayer;
-import com.module.protocol.datalink.IMacReceiver;
 import com.module.protocol.udp.UDPProtocolLayer;
 import com.module.protocol.utils.HexConversion;
 import jpcap.PacketReceiver;
 import jpcap.packet.EthernetPacket;
 import jpcap.packet.IPPacket;
 import jpcap.packet.Packet;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -53,6 +49,11 @@ public class ProtocolManager implements PacketReceiver {
                 return new UDPProtocolLayer();
         }
         return null;
+    }
+
+    //增加一个广播IP数据包接口
+    public void broadcastData(byte[] data){
+        DataLinkLayer.getInstance().sendData(data, broadcast, EthernetPacket.ETHERTYPE_IP);
     }
 
     public void registerForReceiverICMP(Application receiver){
@@ -146,10 +147,17 @@ public class ProtocolManager implements PacketReceiver {
             System.out.println("\n" + "*************************************************");
         }
 
+        if(IPPacket.IPPROTO_UDP == protocol){
+            System.out.println("*_**_**_**_**_**_**_**_**_*");
+            System.out.println("找到了UDP包");
+        }
+
         switch(protocol) {
             case IPPacket.IPPROTO_ICMP:
                 handleICMPPacket(packet, info);
                 break;
+            case IPPacket.IPPROTO_UDP:
+                handleUDPPacket(packet, info);
             default:
                 return;
         }
@@ -181,6 +189,15 @@ public class ProtocolManager implements PacketReceiver {
 //        if(app != null && app.isClosed() != true)
 //            app.handleData(headerInfo);
 
+    }
+
+    private void handleUDPPacket(Packet packet, HashMap<String, Object> infoFromUpLayer){
+        IProtocol udpProtocol = new UDPProtocolLayer();
+        HashMap<String, Object> headerInfo = udpProtocol.handlePacket(packet);
+
+        short destPort = (short)headerInfo.get("dest_port");
+        IApplication app = ApplicationManager.getInstance().getApplicationByPort(destPort);
+        app.handleData(headerInfo);
     }
 
     private void sendWaitingData(byte[] destIP) {

@@ -91,7 +91,6 @@ public class DataLinkLayer extends PacketProvider implements PacketReceiver {
     private Inet4Address getDeviceIpAddress() {
         for(NetworkInterfaceAddress temp : device.addresses){
             System.out.println(temp.address.getHostName());
-            //网卡网址符合ipv4规范才是可用网卡
             if(!(temp.address instanceof Inet4Address))
                 continue;
             return (Inet4Address) temp.address;

@@ -1,5 +1,6 @@
 package com.module.protocol.application;
 
+import com.module.protocol.ApplicationManager;
 import com.module.protocol.IApplication;
 import org.springframework.stereotype.Component;
 
@@ -26,7 +27,7 @@ public class Application implements IApplication {
     }
 
     @Override
-    public void handleData(HashMap<String, Object> data) {
+    public void handleData(HashMap<String, Object> headerInfo) {
 
     }
 }

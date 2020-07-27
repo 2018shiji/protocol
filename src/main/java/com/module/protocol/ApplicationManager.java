@@ -1,6 +1,4 @@
-package com.module.protocol.application;
-
-import com.module.protocol.IApplication;
+package com.module.protocol;
 
 import java.util.ArrayList;
 
