@@ -1,4 +1,4 @@
-package com.module.protocol.icmp;
+package com.module.protocol.icmp.header;
 
 import com.module.protocol.IProtocol;
 import jpcap.packet.Packet;

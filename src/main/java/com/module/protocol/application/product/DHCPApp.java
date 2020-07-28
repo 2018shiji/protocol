@@ -1,25 +1,28 @@
-package com.module.protocol.application;
+package com.module.protocol.application.product;
 
 import com.module.protocol.IProtocol;
 import com.module.protocol.ProtocolManager;
+import com.module.protocol.application.AppDataEvent;
+import com.module.protocol.application.Application;
+import com.module.protocol.application.ApplicationGroup;
 import com.module.protocol.datalink.DataLinkLayer;
 import com.module.protocol.udp.UDPProtocolLayer;
-import jpcap.packet.DatalinkPacket;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
-import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 @Component
 public class DHCPApp extends Application {
-    @Autowired
-    private ProtocolManager protocolManager;
+    @Autowired private ProtocolManager protocolManager;
+    @Autowired private DataLinkLayer dataLinkLayer;
+    @Autowired ApplicationGroup appGroup;
 
     private static byte[] dhcp_front_part;
     private static int DHCP_FRONT_PART_LENGTH = 236;
@@ -110,9 +113,7 @@ public class DHCPApp extends Application {
     public void initDHCPApp(){
         Random rand = new Random();
         transaction_id = rand.nextInt();
-
-        this.port = srcPort;
-
+        appGroup.registerToUDPAppList(this);
     }
 
     private void constructDHCPFrontPart(){
@@ -142,7 +143,7 @@ public class DHCPApp extends Application {
         //设置网关ip
         buffer.put(relay_agent_ip_address);
         //设置硬件地址
-        buffer.put(DataLinkLayer.getInstance().deviceMacAddress());
+        buffer.put(dataLinkLayer.deviceMacAddress());
         //填充接下来的10个字节
         byte[] padding = new byte[10];
         buffer.put(padding);
@@ -168,14 +169,14 @@ public class DHCPApp extends Application {
         buffer.put(OPTION_CLIENT_IDENTIFIER);
         buffer.put(OPTION_CLIENT_IDENTIFIER_DATA_LENGTH);
         buffer.put(OPTION_CLIENT_IDENTIFIED_HARDWARE_TYPE);
-        buffer.put(DataLinkLayer.getInstance().deviceMacAddress());
+        buffer.put(dataLinkLayer.deviceMacAddress());
 
         //option 50 requested IP Address
         byte[] request_IP_Address = new byte[OPTION_CLIENT_IP_ADDRESS_LENGTH];
         buffer = ByteBuffer.wrap(request_IP_Address);
         buffer.put(OPTION_CLIENT_IP_ADDRESS);
         buffer.put(OPTION_CLIENT_IP_ADDRESS_DATA_LENGTH);
-        buffer.put(DataLinkLayer.getInstance().deviceIPAddress());
+        buffer.put(dataLinkLayer.deviceIPAddress());
 
         //option 12 Host Name
         byte[] host_name = new byte[OPTION_HOST_LENGTH];
@@ -267,7 +268,8 @@ public class DHCPApp extends Application {
     }
 
     @Override
-    public void handleData(HashMap<String, Object> headerInfo) {
+    public void handleData(AppDataEvent appDataEvent) {
+        Map<String, Object> headerInfo = appDataEvent.getHeaderInfo();
         byte[] data = (byte[])headerInfo.get("data");
         boolean readSuccess = readFrontPart(data);
         if(readSuccess)readOptions(data);

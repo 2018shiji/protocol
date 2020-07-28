@@ -1,4 +1,4 @@
-package com.module.protocol.icmp;
+package com.module.protocol.icmp.header;
 
 import com.module.protocol.IProtocol;
 import com.module.protocol.utils.Utility;
@@ -31,7 +31,6 @@ public class ICMPEchoHeader implements IProtocol {
             return null;
 
         int bufferLen = ICMP_ECHO_HEADER_LENGTH;
-        int dataLen = ((byte[])headerInfo.get("data")).length;
 
         if(headerInfo.get("data") != null){
             bufferLen += ((byte[])headerInfo.get("data")).length;
@@ -59,6 +58,7 @@ public class ICMPEchoHeader implements IProtocol {
             identifier = 50;
             headerInfo.put("identifier", identifier);
         }
+
         identifier = (short)headerInfo.get("identifier");
         byteBuffer.order(ByteOrder.BIG_ENDIAN);
         byteBuffer.putShort(identifier);
@@ -66,7 +66,6 @@ public class ICMPEchoHeader implements IProtocol {
         short sequenceNumber = 0;
         if (headerInfo.get("sequence_number") != null) {
             sequenceNumber = (short) headerInfo.get("sequence_number");
-//            sequenceNumber += 1;
         }
         headerInfo.put("sequence_number", sequenceNumber);
         byteBuffer.order(ByteOrder.BIG_ENDIAN);
@@ -95,7 +94,7 @@ public class ICMPEchoHeader implements IProtocol {
          header.put("identifier", buffer.getShort(ICMP_ECHO_IDENTIFIER_OFFSET));
          header.put("sequence", buffer.getShort(ICMP_ECHO_SEQUENCE_NUM_OFFSET));
          if(packet.header.length > ICMP_ECHO_ONLY_HEADER_LENGTH)
-             header.put("data", packet.data);
+             header.put("icmp_echo_data", packet.data);
 
          return header;
     }

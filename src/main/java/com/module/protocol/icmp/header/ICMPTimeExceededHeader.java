@@ -1,4 +1,4 @@
-package com.module.protocol.icmp;
+package com.module.protocol.icmp.header;
 
 import com.module.protocol.IProtocol;
 import jpcap.packet.Packet;
@@ -31,7 +31,7 @@ public class ICMPTimeExceededHeader implements IProtocol {
         byte[] data = new byte[packet.header.length - ICMP_TIME_EXCEEDED_DATA_OFFSET];
         buffer.position(ICMP_TIME_EXCEEDED_DATA_OFFSET);
         buffer.get(data, 0, data.length);
-        headerInfo.put("data", data);
+        headerInfo.put("icmp_time_exceed_data", data);
         return headerInfo;
 
     }

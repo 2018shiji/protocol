@@ -2,6 +2,7 @@ package com.module.protocol.arp;
 
 import com.module.protocol.IProtocol;
 import com.module.protocol.datalink.DataLinkLayer;
+import com.module.protocol.utils.SpringUtil;
 import jpcap.packet.ARPPacket;
 import jpcap.packet.Packet;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,7 +57,7 @@ public class ARPProtocolLayer implements IProtocol {
             return false;
 
         //获取接收者IP，确定该数据包是回复给我们的
-        byte[] ip = DataLinkLayer.getInstance().deviceIPAddress();
+        byte[] ip = SpringUtil.getBean(DataLinkLayer.class).deviceIPAddress();
         for(int i = 0; i < 4; i++){
             if (ip[i] != data[ARP_TARGET_IP_START + i])
                 return false;
@@ -108,13 +109,13 @@ public class ARPProtocolLayer implements IProtocol {
             pointer++;
         }
 
-        byte[] macAddress = DataLinkLayer.getInstance().deviceMacAddress();
+        byte[] macAddress = SpringUtil.getBean(DataLinkLayer.class).deviceMacAddress();
         for(int i = 0; i < macAddress.length; i++){
             data[pointer] = macAddress[i];
             pointer++;
         }
 
-        byte[] sourceIP = DataLinkLayer.getInstance().deviceIPAddress();
+        byte[] sourceIP = SpringUtil.getBean(DataLinkLayer.class).deviceIPAddress();
         for(int i = 0; i < sourceIP.length; i++){
             data[pointer] = sourceIP[i];
             pointer++;

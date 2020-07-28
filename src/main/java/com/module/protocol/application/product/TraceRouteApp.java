@@ -1,17 +1,21 @@
-package com.module.protocol.application;
+package com.module.protocol.application.product;
 
 import com.module.protocol.IProtocol;
 import com.module.protocol.ProtocolManager;
+import com.module.protocol.application.AppDataEvent;
+import com.module.protocol.application.Application;
+import com.module.protocol.application.ApplicationGroup;
 import com.module.protocol.icmp.ICMPProtocolLayer;
-import com.module.protocol.udp.UDPProtocolLayer;
 import com.module.protocol.utils.HexConversion;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 @Component
@@ -25,16 +29,17 @@ public class TraceRouteApp extends Application {
     private static byte ICMP_TIME_EXCEEDED_CODE = 0;
 
     @Autowired ProtocolManager protocolManager;
+    @Autowired ApplicationGroup appGroup;
 
-    public TraceRouteApp(){
+    @PostConstruct
+    public void initTraceRouteApp(){
         Random rand = new Random();
         identifier = (short) (50 & 0x0000FFFF);
-        port = identifier;
         try{
             //todo 测试百度或者其他网站的路由追踪，目前暂不支持直接域名，需把域名转为ip，可Windows下tracert查看域名具体IP号
-            this.route_ip = InetAddress.getByName("192.168.50.1").getAddress();
+            this.route_ip = InetAddress.getByName("192.168.43.51").getAddress();
         } catch (UnknownHostException e){e.printStackTrace();}
-
+        appGroup.registerToICMPList(this);
     }
 
     public void startTraceRoute(){
@@ -43,7 +48,6 @@ public class TraceRouteApp extends Application {
             System.out.println("TraceRouteApp: route_ip = " + HexConversion.bytes2Ipv4(route_ip));
             protocolManager.sendData(packet, route_ip);
 
-            protocolManager.registerForReceiverICMP(this);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -91,7 +95,7 @@ public class TraceRouteApp extends Application {
         }
         byte protocol = ICMPProtocolLayer.PROTOCOL_ICMP;
         headerInfo.put("protocol", protocol);
-        headerInfo.put("identification", (short)port);
+//        headerInfo.put("identification", (short)port);
         //该值必须依次递增
         headerInfo.put("time_to_live", time_to_live);
         byte[] ipHeader = ip4Proto.createHeader(headerInfo);
@@ -120,7 +124,9 @@ public class TraceRouteApp extends Application {
     }
 
     @Override
-    public void handleData(HashMap<String, Object> data) {
+    public void handleData(AppDataEvent event) {
+        Map<String, Object> data = event.getHeaderInfo();
+
         if(data.get("type") == null || data.get("code") == null){
             return;
         }

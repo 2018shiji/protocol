@@ -1,6 +1,8 @@
 package com.module.protocol.icmp;
 
 import com.module.protocol.IProtocol;
+import com.module.protocol.icmp.header.ICMPEchoHeader;
+import com.module.protocol.icmp.header.ICMPTimeExceededHeader;
 import jpcap.packet.Packet;
 import org.springframework.stereotype.Component;
 
@@ -41,10 +43,12 @@ public class ICMPProtocolLayer implements IProtocol {
     }
 
     private HashMap<String, Object> analyzeICMPMessage() {
-        HashMap<String, Object> info = null;
+        HashMap<String, Object> info = new HashMap();
         for(int i = 0; i < protocol_header_list.size(); i++) {
             IProtocol handler = protocol_header_list.get(i);
-            info = handler.handlePacket(packet);
+            if(handler.handlePacket(packet) != null) {
+                info.putAll(handler.handlePacket(packet));
+            }
         }
 
         return info;

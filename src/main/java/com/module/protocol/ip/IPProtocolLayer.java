@@ -2,6 +2,7 @@ package com.module.protocol.ip;
 
 import com.module.protocol.IProtocol;
 import com.module.protocol.utils.HexConversion;
+import com.module.protocol.utils.SpringUtil;
 import com.module.protocol.utils.Utility;
 import com.module.protocol.datalink.DataLinkLayer;
 import jpcap.packet.Packet;
@@ -16,6 +17,7 @@ import java.util.HashMap;
 
 @Component("ipProtocolLayer")
 public class IPProtocolLayer implements IProtocol {
+
     private static int ETHERNET_FRAME_HEADER_LENGTH = 14;
     private static byte IP_VERSION = 4;
     private static int CHECKSUM_OFFSET = 10;
@@ -99,7 +101,7 @@ public class IPProtocolLayer implements IProtocol {
         byteBuffer.putShort(checkSum);
 
 
-        byte[] sourceIPBytes = DataLinkLayer.getInstance().deviceIPAddress();
+        byte[] sourceIPBytes = SpringUtil.getBean(DataLinkLayer.class).deviceIPAddress();
         ByteBuffer sourceIP = ByteBuffer.wrap(sourceIPBytes);
         int srcIP;
         if(headerInfo.get("source_ip") == null) {
@@ -158,7 +160,7 @@ public class IPProtocolLayer implements IProtocol {
         headerInfo.put("dest_ip", HexConversion.bytes2Ipv4(dest_ip));
 
         //确保接收者是我们自己
-        byte[] ip = DataLinkLayer.getInstance().deviceIPAddress();
+        byte[] ip = SpringUtil.getBean(DataLinkLayer.class).deviceIPAddress();
         for(int i = 0; i < ip.length; i++){
             if(ip[i] != dest_ip[i])
                 return null;

@@ -3,6 +3,8 @@ package com.module.protocol.datalink;
 import jpcap.*;
 import jpcap.packet.EthernetPacket;
 import jpcap.packet.Packet;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -11,25 +13,15 @@ import java.net.Inet4Address;
 /**
  * 数据链路层
  */
-public class DataLinkLayer extends PacketProvider implements PacketReceiver {
-    private static DataLinkLayer instance;
+@Component
+public class DataLinkLayer implements PacketReceiver {
+    @Autowired ApplicationContext appContext;
+
     private NetworkInterface device;
     private Inet4Address ipAddress;
     private byte[] macAddress;
     JpcapSender sender;
 
-    private DataLinkLayer(){}
-
-    public static DataLinkLayer getInstance(){
-        if(instance == null){
-            synchronized (DataLinkLayer.class){
-                if(instance == null){
-                    instance = new DataLinkLayer();
-                }
-            }
-        }
-        return instance;
-    }
 
     public void initWithOpenDevice(NetworkInterface device){
         this.device = device;
@@ -83,16 +75,13 @@ public class DataLinkLayer extends PacketProvider implements PacketReceiver {
     }
 
 
-
     @Override
     public void receivePacket(Packet packet) {
-        pushPacketToReceivers(packet);
-
+        appContext.publishEvent(new DataReceiveEvent("DataLinkLayer").withDataPacket(packet));
     }
 
     private Inet4Address getDeviceIpAddress() {
         for(NetworkInterfaceAddress temp : device.addresses){
-            System.out.println(temp.address.getHostName());
             if(!(temp.address instanceof Inet4Address))
                 continue;
             return (Inet4Address) temp.address;

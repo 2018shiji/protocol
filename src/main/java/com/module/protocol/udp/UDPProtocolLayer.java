@@ -16,6 +16,10 @@ public class UDPProtocolLayer implements IProtocol {
     private static short UDP_LENGTH_WITHOUT_DATA = 8;
     public static byte PROTOCOL_UDP = 17;
 
+    private static final short UDP_SRC_PORT_OFFSET = 0;
+    private static final short UDP_DST_PORT_OFFSET = 2;
+    private static final short UDP_LENGTH_OFFSET = 4;
+
     @Override
     public byte[] createHeader(HashMap<String, Object> headerInfo) {
         if(headerInfo.get("source_port") == null || headerInfo.get("dest_port") == null)
@@ -57,7 +61,15 @@ public class UDPProtocolLayer implements IProtocol {
     public HashMap<String, Object> handlePacket(Packet packet) {
         System.out.println("UDPProtocolLayer receive packet at: "
                 + new SimpleDateFormat("HH:mm:ss:SSS").format(Calendar.getInstance().getTime()));
-        return null;
+        ByteBuffer buffer = ByteBuffer.wrap(packet.header);
+        HashMap<String, Object> headerInfo = new HashMap();
+
+        headerInfo.put("src_port", buffer.getShort(UDP_SRC_PORT_OFFSET));
+        headerInfo.put("dest_port", buffer.getShort(UDP_DST_PORT_OFFSET));
+        headerInfo.put("length", buffer.getShort(UDP_LENGTH_OFFSET));
+        headerInfo.put("data", packet.data);
+
+        return headerInfo;
     }
 
 }

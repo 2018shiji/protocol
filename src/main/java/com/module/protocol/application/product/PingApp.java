@@ -1,5 +1,8 @@
-package com.module.protocol.application;
+package com.module.protocol.application.product;
 
+import com.module.protocol.application.AppDataEvent;
+import com.module.protocol.application.Application;
+import com.module.protocol.application.ApplicationGroup;
 import com.module.protocol.icmp.ICMPProtocolLayer;
 import com.module.protocol.IProtocol;
 import com.module.protocol.ProtocolManager;
@@ -7,10 +10,12 @@ import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 @Component
@@ -22,17 +27,19 @@ public class PingApp extends Application {
     private short identifier = 0;//进程号
     private short sequence = 0;//消息序列
 
-    @Autowired
-    private ProtocolManager manager;
+    @Autowired private ProtocolManager manager;
+    @Autowired ApplicationGroup appGroup;
 
-    public PingApp() {
+    @PostConstruct
+    public void initPingApp() {
         Random rand = new Random();
         identifier = (short) (50 & 0x0000FFFF);
-        port = identifier;
         try {
-            this.destIP = InetAddress.getByName("192.168.50.1").getAddress();
+            /** 局域网内IP互ping时，destIP采用远程机器IP即可，公网互ping时需借助网关对外发起ping包请求 **/
+//            this.destIP = InetAddress.getByName("192.168.43.154").getAddress();
+            this.destIP = InetAddress.getByName("192.168.43.51").getAddress();
         } catch (UnknownHostException e){e.printStackTrace();}
-
+        appGroup.registerToICMPList(this);
     }
 
     public void startPing() {
@@ -48,9 +55,6 @@ public class PingApp extends Application {
 
     private byte[] createPackage() throws Exception {
         byte[] icmpEchoHeader = createICMPEchoHeader();
-        if(icmpEchoHeader == null){
-            throw new Exception("ICMP Header create fail");
-        }
         byte[] ipHeader =createIP4Header(icmpEchoHeader.length);
         for(int i = 0; i < ipHeader.length; i++) {
             System.out.print(Integer.toHexString(ipHeader[i] & 0xFF) + "\t");
@@ -61,7 +65,6 @@ public class PingApp extends Application {
         }
         System.out.println();
         System.out.println("PingApp: ipHeader length " + ipHeader.length + "****** icmpHeader length" + icmpEchoHeader.length);
-
 
         //分别构建ip包头和icmp echo包头后，将两个包头结合在一起
         byte[] packet = new byte[ipHeader.length + icmpEchoHeader.length];
@@ -100,8 +103,9 @@ public class PingApp extends Application {
         HashMap<String, Object> headerInfo = new HashMap<>();
         headerInfo.put("data_length", dataLength);
         try {
-            ByteBuffer destIP = ByteBuffer.wrap(InetAddress.getByName("185.53.178.50").getAddress());
-            headerInfo.put("destination_ip", destIP.getInt());
+//            ByteBuffer finalDestIP = ByteBuffer.wrap(InetAddress.getByName("192.168.43.154").getAddress());
+            ByteBuffer finalDestIP = ByteBuffer.wrap(InetAddress.getByName("185.53.178.50").getAddress());
+            headerInfo.put("destination_ip", finalDestIP.getInt());
         }catch (UnknownHostException e){
             e.printStackTrace();
         }
@@ -109,7 +113,6 @@ public class PingApp extends Application {
         byte protocol = ICMPProtocolLayer.PROTOCOL_ICMP;
         headerInfo.put("protocol", protocol);
 
-        headerInfo.put("identification", (short)port);
 
         byte[] ipHeader = ip4.createHeader(headerInfo);
 
@@ -117,13 +120,9 @@ public class PingApp extends Application {
     }
 
     @Override
-    public void handleData(HashMap<String, Object> data) {
-        long time = System.currentTimeMillis();
-        short sequence = (short)data.get("sequence");
-        byte[] time_buf = (byte[])data.get("data");
-        ByteBuffer buf = ByteBuffer.wrap(time_buf);
-        long send_time = buf.getLong();
-        System.out.println("￥￥￥￥￥￥￥￥￥ receive reply for ping request " + sequence);
+    public void handleData(AppDataEvent event) {
+        Map<String, Object> data = event.getHeaderInfo();
+        System.out.println("￥￥￥￥￥￥￥￥￥ receive reply for ping request ");
     }
 
 }
