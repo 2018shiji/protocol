@@ -86,6 +86,7 @@ public class DataLinkLayer extends PacketProvider implements PacketReceiver {
     @Override
     public void receivePacket(Packet packet) {
         pushPacketToReceivers(packet);
+
     }
 
     private Inet4Address getDeviceIpAddress() {

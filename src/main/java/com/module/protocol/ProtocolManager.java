@@ -36,6 +36,7 @@ public class ProtocolManager implements PacketReceiver {
         ipToMacTable = new HashMap<>();
         dataWaitToSend = new HashMap<>();
         icmpPacketReceivers = new ArrayList<>();
+
         DataLinkLayer.getInstance().registerPacketReceiver(this);
     }
 
