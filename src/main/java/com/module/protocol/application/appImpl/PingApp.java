@@ -1,4 +1,4 @@
-package com.module.protocol.application.product;
+package com.module.protocol.application.appImpl;
 
 import com.module.protocol.application.AppDataEvent;
 import com.module.protocol.application.Application;
@@ -6,6 +6,7 @@ import com.module.protocol.application.ApplicationGroup;
 import com.module.protocol.icmp.ICMPProtocolLayer;
 import com.module.protocol.IProtocol;
 import com.module.protocol.ProtocolManager;
+import com.module.protocol.utils.HexConversion;
 import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -20,40 +21,33 @@ import java.util.Random;
 
 @Component
 public class PingApp extends Application {
-    @Setter
-    private int echo_times = 1;//连续发送多少次数据包
-    @Setter
-    private byte[] destIP = null;//ping的对象
     private short identifier = 0;//进程号
     private short sequence = 0;//消息序列
+    private byte[] finalRemoteIP;
 
-    @Autowired private ProtocolManager manager;
+    @Autowired ProtocolManager manager;
     @Autowired ApplicationGroup appGroup;
 
     @PostConstruct
     public void initPingApp() {
-        Random rand = new Random();
         identifier = (short) (50 & 0x0000FFFF);
-        try {
-            /** 局域网内IP互ping时，destIP采用远程机器IP即可，公网互ping时需借助网关对外发起ping包请求 **/
-//            this.destIP = InetAddress.getByName("192.168.43.154").getAddress();
-            this.destIP = InetAddress.getByName("192.168.43.51").getAddress();
-        } catch (UnknownHostException e){e.printStackTrace();}
         appGroup.registerToICMPList(this);
     }
 
-    public void startPing() {
-        for(int i = 0; i < echo_times; i++){
-            try{
-                byte[] packet = createPackage();
-                manager.sendData(packet, destIP);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
+    public void startPing(String netInterface, String finalRemoteAddr) {
+
+        try {
+            /** 局域网内IP互ping时，destIP采用远程机器IP即可，公网互ping时需借助网关对外发起ping包请求 **/
+//            byte[] destIP = InetAddress.getByName("192.168.43.154").getAddress();
+            this.finalRemoteIP = InetAddress.getByName(finalRemoteAddr).getAddress();
+            byte[] netInterfaceIP = InetAddress.getByName(netInterface).getAddress();
+            byte[] packet = createPackage();
+            manager.sendData(packet, netInterfaceIP);
+        } catch (Exception e){e.printStackTrace();}
+
     }
 
-    private byte[] createPackage() throws Exception {
+    private byte[] createPackage() {
         byte[] icmpEchoHeader = createICMPEchoHeader();
         byte[] ipHeader =createIP4Header(icmpEchoHeader.length);
         for(int i = 0; i < ipHeader.length; i++) {
@@ -102,13 +96,8 @@ public class PingApp extends Application {
         //创建IP包头默认情况下只需要发送数据长度，下层协议号，接收方IP地址
         HashMap<String, Object> headerInfo = new HashMap<>();
         headerInfo.put("data_length", dataLength);
-        try {
-//            ByteBuffer finalDestIP = ByteBuffer.wrap(InetAddress.getByName("192.168.43.154").getAddress());
-            ByteBuffer finalDestIP = ByteBuffer.wrap(InetAddress.getByName("185.53.178.50").getAddress());
-            headerInfo.put("destination_ip", finalDestIP.getInt());
-        }catch (UnknownHostException e){
-            e.printStackTrace();
-        }
+        ByteBuffer finalDestIP = ByteBuffer.wrap(finalRemoteIP);
+        headerInfo.put("destination_ip", finalDestIP.getInt());
 
         byte protocol = ICMPProtocolLayer.PROTOCOL_ICMP;
         headerInfo.put("protocol", protocol);
@@ -122,7 +111,13 @@ public class PingApp extends Application {
     @Override
     public void handleData(AppDataEvent event) {
         Map<String, Object> data = event.getHeaderInfo();
-        System.out.println("￥￥￥￥￥￥￥￥￥ receive reply for ping request ");
+        //获得发送该数据包的路由器ip
+        byte[] source_ip = HexConversion.ipv42Bytes((String)data.get("source_ip"));
+        try {
+            System.out.println("￥￥￥￥￥￥￥￥￥ receive reply for ping request from: "
+                    + InetAddress.getByAddress(source_ip).toString()
+            );
+        } catch (Exception e){e.printStackTrace();}
     }
 
 }
