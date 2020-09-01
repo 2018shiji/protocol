@@ -1,11 +1,10 @@
-package com.module.protocol.arp;
+package com.module.protocol.layer.arp;
 
-import com.module.protocol.IProtocol;
-import com.module.protocol.datalink.DataLinkLayer;
+import com.module.protocol.layer.IProtocol;
+import com.module.protocol.layer.datalink.DataLinkLayer;
 import com.module.protocol.utils.SpringUtil;
 import jpcap.packet.ARPPacket;
 import jpcap.packet.Packet;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.nio.ByteBuffer;

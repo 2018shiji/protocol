@@ -3,21 +3,21 @@ package com.module.protocol.application.appImpl;
 import com.module.protocol.application.AppDataEvent;
 import com.module.protocol.application.Application;
 import com.module.protocol.application.ApplicationGroup;
-import com.module.protocol.icmp.ICMPProtocolLayer;
-import com.module.protocol.IProtocol;
+import com.module.protocol.layer.icmp.ICMPProtocolLayer;
+import com.module.protocol.layer.IProtocol;
 import com.module.protocol.ProtocolManager;
+import com.module.protocol.product.PingMQueue;
+import com.module.protocol.product.PingResponse;
 import com.module.protocol.utils.HexConversion;
-import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 
 @Component
 public class PingApp extends Application {
@@ -25,6 +25,7 @@ public class PingApp extends Application {
     private short sequence = 0;//消息序列
     private byte[] finalRemoteIP;
 
+    @Autowired PingMQueue pingMQueue;
     @Autowired ProtocolManager manager;
     @Autowired ApplicationGroup appGroup;
 
@@ -114,9 +115,9 @@ public class PingApp extends Application {
         //获得发送该数据包的路由器ip
         byte[] source_ip = HexConversion.ipv42Bytes((String)data.get("source_ip"));
         try {
-            System.out.println("￥￥￥￥￥￥￥￥￥ receive reply for ping request from: "
-                    + InetAddress.getByAddress(source_ip).toString()
-            );
+            String sourceIp = InetAddress.getByAddress(source_ip).toString();
+            pingMQueue.getQueue().add(new PingResponse(sourceIp, new Date()));
+            System.out.println("￥￥￥￥￥￥￥￥￥ receive reply for ping request from: " + sourceIp);
         } catch (Exception e){e.printStackTrace();}
     }
 

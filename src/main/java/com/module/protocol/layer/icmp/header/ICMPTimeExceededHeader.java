@@ -1,6 +1,6 @@
-package com.module.protocol.icmp.header;
+package com.module.protocol.layer.icmp.header;
 
-import com.module.protocol.IProtocol;
+import com.module.protocol.layer.IProtocol;
 import jpcap.packet.Packet;
 import org.springframework.stereotype.Component;
 

@@ -1,13 +1,10 @@
 package com.module.protocol.product;
 
 import com.module.protocol.application.appImpl.PingApp;
-import com.module.protocol.datalink.DataLinkLayer;
-import jpcap.JpcapCaptor;
 import lombok.Setter;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;

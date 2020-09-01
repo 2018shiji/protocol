@@ -1,14 +1,13 @@
-package com.module.protocol.icmp.header;
+package com.module.protocol.layer.icmp.header;
 
-import com.module.protocol.IProtocol;
-import com.module.protocol.utils.Utility;
+import com.module.protocol.layer.IProtocol;
+import com.module.protocol.utils.NumUtility;
 import jpcap.packet.Packet;
 import org.springframework.stereotype.Component;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.HashMap;
-import java.util.Random;
 
 /**
  * 构造协议头
@@ -77,7 +76,7 @@ public class ICMPEchoHeader implements IProtocol {
             byteBuffer.put(data, 0, data.length);
         }
 
-        checkSum = (short) Utility.checksum(byteBuffer.array(), byteBuffer.array().length);
+        checkSum = (short) NumUtility.checksum(byteBuffer.array(), byteBuffer.array().length);
         byteBuffer.order(ByteOrder.BIG_ENDIAN);
         byteBuffer.putShort(2, checkSum);
 

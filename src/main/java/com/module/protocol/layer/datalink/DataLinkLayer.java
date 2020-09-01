@@ -1,4 +1,4 @@
-package com.module.protocol.datalink;
+package com.module.protocol.layer.datalink;
 
 import jpcap.*;
 import jpcap.packet.EthernetPacket;

@@ -1,8 +1,6 @@
-package com.module.protocol;
+package com.module.protocol.layer;
 
-import com.module.protocol.datalink.DataLinkLayer;
 import jpcap.packet.Packet;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;

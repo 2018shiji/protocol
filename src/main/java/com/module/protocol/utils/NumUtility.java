@@ -1,6 +1,6 @@
 package com.module.protocol.utils;
 
-public class Utility {
+public class NumUtility {
     public static long checksum(byte[] buf, int length){
         int i = 0;
         long sum = 0;

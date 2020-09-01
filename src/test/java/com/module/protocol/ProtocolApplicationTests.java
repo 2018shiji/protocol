@@ -7,9 +7,10 @@ import com.module.protocol.application.tool.PortScan;
 import com.module.protocol.application.tool.ScanInfo;
 import com.module.protocol.application.tool.ScanInfoInput;
 import com.module.protocol.application.tool.SelectorHandler;
-import com.module.protocol.arp.ARPProtocolLayer;
-import com.module.protocol.datalink.DataLinkLayer;
+import com.module.protocol.layer.arp.ARPProtocolLayer;
+import com.module.protocol.layer.datalink.DataLinkLayer;
 import com.module.protocol.product.DeviceMonitor;
+import com.module.protocol.product.PingConsumer;
 import jpcap.JpcapCaptor;
 import jpcap.NetworkInterface;
 import jpcap.NetworkInterfaceAddress;
@@ -90,10 +91,13 @@ class ProtocolApplicationTests {
 
     @Autowired
     DeviceMonitor deviceMonitor;
+    @Autowired
+    PingConsumer pingConsumer;
 
     @Test
     void testDeviceMonitor() throws Exception {
         deviceMonitor.doPingJob(null);
+        pingConsumer.start();
         jpcapCaptor.loopPacket(-1, dataLinkLayer);
     }
 }

@@ -1,8 +1,8 @@
-package com.module.protocol.icmp;
+package com.module.protocol.layer.icmp;
 
-import com.module.protocol.IProtocol;
-import com.module.protocol.icmp.header.ICMPEchoHeader;
-import com.module.protocol.icmp.header.ICMPTimeExceededHeader;
+import com.module.protocol.layer.IProtocol;
+import com.module.protocol.layer.icmp.header.ICMPEchoHeader;
+import com.module.protocol.layer.icmp.header.ICMPTimeExceededHeader;
 import jpcap.packet.Packet;
 import org.springframework.stereotype.Component;
 
